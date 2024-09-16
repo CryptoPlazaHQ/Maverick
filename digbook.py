@@ -83,7 +83,7 @@ def optimize_grid_settings(current_price, atr, position_type):
     }
 
 def calculate_grid_profit(suggested_grid_size, current_price):
-    return (suggested_grid_size / current_price) * 10
+    return (suggested_grid_size / current_price) * 100
 
 # Main Streamlit App Logic
 def main():
