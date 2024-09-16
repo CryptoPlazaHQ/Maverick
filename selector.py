@@ -1,27 +1,11 @@
-import pandas as pd
-import numpy as np
 import streamlit as st
+import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 from datetime import datetime, timezone
-import time
-import logging
-from cachetools import TTLCache
-import os
 import concurrent.futures
-import threading
 from tradingview_ta import TA_Handler, Interval
 
-# Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# Set up caching
-cache = TTLCache(maxsize=1000, ttl=300)  # Cache with 5-minute TTL
-
-# CSV file path
-CSV_FILE_PATH = "4h_rsi.csv"
-
-# List of symbols - ADD YOUR SYMBOLS HERE
+# List of symbols
 symbols = [
     "10000LADYSUSDT.P", "10000NFTUSDT.P", "1000BONKUSDT.P", "1000BTTUSDT.P", 
     "1000FLOKIUSDT.P", "1000LUNCUSDT.P", "1000PEPEUSDT.P", "1000XECUSDT.P", 
@@ -75,101 +59,39 @@ exchange = "BYBIT"
 screener = "crypto"
 interval = Interval.INTERVAL_4_HOURS
 
-def fetch_all_data(symbol, exchange, screener, interval):
-    cache_key = f"{symbol}_{exchange}_{screener}_{interval}"
-    if cache_key in cache:
-        return cache[cache_key]
-    
+@st.cache_data(ttl=180)
+def fetch_all_data():
+    results = []
+    current_datetime = datetime.now(timezone.utc)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+        future_to_symbol = {executor.submit(process_symbol, symbol): symbol for symbol in symbols}
+        for future in concurrent.futures.as_completed(future_to_symbol):
+            result = future.result()
+            if result:
+                result["Timestamp"] = current_datetime
+                results.append(result)
+
+    return pd.DataFrame(results)
+
+def process_symbol(symbol):
     try:
         handler = TA_Handler(
             symbol=symbol,
             exchange=exchange,
             screener=screener,
             interval=interval,
-            timeout=30  # Added timeout
+            timeout=None
         )
         analysis = handler.get_analysis()
-        cache[cache_key] = analysis
-        return analysis
+        rsi_value = analysis.indicators.get('RSI', None)
+        return {"Symbol": symbol, "4h RSI": rsi_value}
     except Exception as e:
-        logging.error(f"Error fetching data for {symbol} on {interval}: {str(e)}")
+        st.error(f"Error fetching data for {symbol}: {str(e)}")
         return None
 
-def process_symbol(symbol):
-    analysis = fetch_all_data(symbol, exchange, screener, interval)
-    
-    if analysis:
-        rsi_value = analysis.indicators.get('RSI', None)  # Fetch RSI value
-        return {"Symbol": symbol, "4h RSI": rsi_value}
-    return None
-
-def update_csv():
-    while True:
-        try:
-            current_datetime = datetime.now(timezone.utc)
-            
-            with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-                future_to_symbol = {executor.submit(process_symbol, symbol): symbol for symbol in symbols}
-                results = []
-                for future in concurrent.futures.as_completed(future_to_symbol):
-                    result = future.result()
-                    if result:
-                        result["Timestamp"] = current_datetime
-                        results.append(result)
-            
-            new_df = pd.DataFrame(results)
-            
-            if not new_df.empty:
-                # Reorder columns to ensure '4h RSI' is in the correct position
-                columns = [col for col in new_df.columns if col != '4h RSI'] + ['4h RSI']
-                new_df = new_df[columns]
-                
-                # Append the new data to the CSV file
-                try:
-                    if os.path.exists(CSV_FILE_PATH):
-                        new_df.to_csv(CSV_FILE_PATH, mode='a', header=False, index=False)
-                    else:
-                        new_df.to_csv(CSV_FILE_PATH, index=False)
-                    
-                    logging.info(f"CSV updated at {current_datetime} with {len(results)} symbols.")
-                except Exception as e:
-                    logging.error(f"Error writing to CSV: {str(e)}")
-            else:
-                logging.warning("No data to write to CSV.")
-            
-            # Sleep for 3 minutes before the next update
-            time.sleep(180)
-            
-        except Exception as e:
-            logging.error(f"An error occurred in update_csv: {str(e)}")
-            time.sleep(600)  # Wait 10 minutes before retrying
-
-@st.cache_data(ttl=180)
-def load_and_process_data():
-    try:
-        df = pd.read_csv(CSV_FILE_PATH)
-        df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce', utc=True)
-        df = df.dropna(subset=['Timestamp'])
-        df['4h RSI'] = pd.to_numeric(df['4h RSI'], errors='coerce')
-        return df
-    except Exception as e:
-        logging.error(f"Error loading data: {str(e)}")
-        return pd.DataFrame()  # Return an empty DataFrame if there's an error
-
-def get_latest_data(df):
-    if df.empty:
-        return pd.DataFrame(), pd.NaT
-    
-    latest_timestamp = df['Timestamp'].max()
-    if pd.isnull(latest_timestamp):
-        return pd.DataFrame(), pd.NaT
-    
-    latest_df = df[df['Timestamp'] == latest_timestamp].copy()
-    latest_df['RSI Change'] = latest_df.groupby('Symbol')['4h RSI'].transform(lambda x: x.diff())
-    return latest_df, latest_timestamp
-
 def display_streamlit_app():
-    st.set_page_config(page_title="Maverick", layout="wide", initial_sidebar_state="expanded")
+    st.set_page_config(page_title="Crypto Selector", layout="wide", initial_sidebar_state="expanded")
 
     # Custom CSS for dark mode
     st.markdown("""
@@ -194,130 +116,99 @@ def display_streamlit_app():
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             color: white;
         }
-        .stTextInput>div>div>input {
+        .stButton>button {
             color: white;
-            background-color: #3D3D3D;
-        }
-        .stSelectbox>div>div>select {
-            color: white;
-            background-color: #3D3D3D;
-        }
-        .stMultiSelect>div>div>select {
-            color: white;
-            background-color: #3D3D3D;
+            background-color: #4CAF50;
+            border: none;
         }
     </style>
     """, unsafe_allow_html=True)
 
-    st.title('📊 Entry Selector')
+    st.title('📊 Crypto RSI Analysis')
 
-    # Implement native Streamlit auto-refresh
-    refresh_interval = 180  # 3 minutes in seconds
-    if 'last_refresh' not in st.session_state:
-        st.session_state.last_refresh = time.time()
-
-    if time.time() - st.session_state.last_refresh > refresh_interval:
-        st.session_state.last_refresh = time.time()
+    if st.button('Refresh Data'):
         st.experimental_rerun()
 
-    if os.path.exists(CSV_FILE_PATH):
-        try:
-            df = load_and_process_data()
-            latest_df, latest_timestamp = get_latest_data(df)
-            
-            # Sidebar
-            st.sidebar.header('Dashboard Controls')
-            
-            if pd.notnull(latest_timestamp):
-                st.sidebar.write(f"🕒 Last update: {latest_timestamp.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-            else:
-                st.sidebar.write("🕒 Last update: Not available")
-            
-            rsi_range = st.sidebar.slider('Range', 0, 100, (30, 70))
-            symbols_to_show = st.sidebar.multiselect('Select Symbols', options=latest_df['Symbol'].unique(), default=[])
+    df = fetch_all_data()
 
-            # Main dashboard area
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-                st.metric("Total Symbols", len(latest_df))
-                st.markdown('</div>', unsafe_allow_html=True)
-            with col2:
-                st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-                st.metric("Avg RSI", f"{latest_df['4h RSI'].mean():.2f}")
-                st.markdown('</div>', unsafe_allow_html=True)
-            with col3:
-                st.markdown('<div class="metric-card">', unsafe_allow_html=True)
-                st.metric("Symbols in Range", len(latest_df[(latest_df['4h RSI'] >= rsi_range[0]) & (latest_df['4h RSI'] <= rsi_range[1])]))
-                st.markdown('</div>', unsafe_allow_html=True)
+    # Sidebar
+    st.sidebar.header('Dashboard Controls')
+    st.sidebar.write(f"🕒 Last update: {df['Timestamp'].iloc[0].strftime('%Y-%m-%d %H:%M:%S %Z')}")
+    
+    rsi_range = st.sidebar.slider('RSI Range', 0, 100, (30, 70))
+    symbols_to_show = st.sidebar.multiselect('Select Symbols', options=df['Symbol'].unique(), default=[])
 
-            # RSI Distribution
-            st.subheader('📈 Distribution')
-            fig_hist = px.histogram(latest_df, x='4h RSI', nbins=50, 
-                                    title='Momentum Distribution',
-                                    labels={'4h RSI': 'RSI Value', 'count': 'Number of Symbols'},
-                                    color_discrete_sequence=['#8A2BE2'])  # Dark Purple
-            fig_hist.add_vline(x=30, line_dash="dash", line_color="#FF4136", annotation_text="Oversold")
-            fig_hist.add_vline(x=70, line_dash="dash", line_color="#2ECC40", annotation_text="Overbought")
-            fig_hist.update_layout(
-                plot_bgcolor='#1E1E1E',
-                paper_bgcolor='#1E1E1E',
-                font_color='white'
-            )
-            st.plotly_chart(fig_hist, use_container_width=True)
+    # Main dashboard area
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("Total Symbols", len(df))
+        st.markdown('</div>', unsafe_allow_html=True)
+    with col2:
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("Avg RSI", f"{df['4h RSI'].mean():.2f}")
+        st.markdown('</div>', unsafe_allow_html=True)
+    with col3:
+        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
+        st.metric("Symbols in Range", len(df[(df['4h RSI'] >= rsi_range[0]) & (df['4h RSI'] <= rsi_range[1])]))
+        st.markdown('</div>', unsafe_allow_html=True)
 
-            # Symbols in selected range
-            st.subheader(f'🎯 Symbols in Range ({rsi_range[0]}-{rsi_range[1]})')
-            df_in_range = latest_df[(latest_df['4h RSI'] >= rsi_range[0]) & (latest_df['4h RSI'] <= rsi_range[1])].sort_values(by='4h RSI', ascending=False)
-            if not df_in_range.empty:
-                fig_range = px.scatter(df_in_range, x='Symbol', y='4h RSI', color='4h RSI', 
-                                       hover_data=['RSI Change'],
-                                       title=f'Symbols in Momentum between {rsi_range[0]} and {rsi_range[1]}',
-                                       color_continuous_scale='Viridis')
-                fig_range.update_traces(marker=dict(size=10))
-                fig_range.update_layout(
-                    xaxis_tickangle=-45,
-                    plot_bgcolor='#1E1E1E',
-                    paper_bgcolor='#1E1E1E',
-                    font_color='white'
-                )
-                st.plotly_chart(fig_range, use_container_width=True)
-                
-                st.dataframe(df_in_range[['Symbol', '4h RSI', 'RSI Change']].style
-                             .format({'4h RSI': '{:.2f}', 'RSI Change': '{:.2f}'})
-                             .background_gradient(cmap='viridis', subset=['4h RSI']))
-            else:
-                st.info("No symbols found in the selected RSI range.")
+    # RSI Distribution
+    st.subheader('📈 Distribution')
+    fig_hist = px.histogram(df, x='4h RSI', nbins=50, 
+                            title='RSI Distribution',
+                            labels={'4h RSI': 'RSI Value', 'count': 'Number of Symbols'},
+                            color_discrete_sequence=['#8A2BE2'])
+    fig_hist.add_vline(x=30, line_dash="dash", line_color="#FF4136", annotation_text="Oversold")
+    fig_hist.add_vline(x=70, line_dash="dash", line_color="#2ECC40", annotation_text="Overbought")
+    fig_hist.update_layout(
+        plot_bgcolor='#1E1E1E',
+        paper_bgcolor='#1E1E1E',
+        font_color='white'
+    )
+    st.plotly_chart(fig_hist, use_container_width=True)
 
-            # Detailed view of selected symbols
-            if symbols_to_show:
-                st.subheader('🔍 Detailed Symbol View')
-                df_selected = latest_df[latest_df['Symbol'].isin(symbols_to_show)]
-                fig_selected = px.bar(df_selected, x='Symbol', y='4h RSI', color='4h RSI',
-                                      title='Momentum Values for Selected Symbols',
-                                      color_continuous_scale='Viridis')
-                fig_selected.add_hline(y=30, line_dash="dash", line_color="#FF4136", annotation_text="Ready to Buy?")
-                fig_selected.add_hline(y=70, line_dash="dash", line_color="#2ECC40", annotation_text="Ready to Short?")
-                fig_selected.update_layout(
-                    plot_bgcolor='#1E1E1E',
-                    paper_bgcolor='#1E1E1E',
-                    font_color='white'
-                )
-                st.plotly_chart(fig_selected, use_container_width=True)
-
-                # Detailed table for selected symbols
-                st.dataframe(df_selected[['Symbol', '4h RSI', 'RSI Change']]
-                             .style.format({'4h RSI': '{:.2f}', 'RSI Change': '{:.2f}'})
-                             .background_gradient(cmap='viridis', subset=['4h RSI']))
-
-        except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
+    # Symbols in selected range
+    st.subheader(f'🎯 Symbols in Range ({rsi_range[0]}-{rsi_range[1]})')
+    df_in_range = df[(df['4h RSI'] >= rsi_range[0]) & (df['4h RSI'] <= rsi_range[1])].sort_values(by='4h RSI', ascending=False)
+    if not df_in_range.empty:
+        fig_range = px.scatter(df_in_range, x='Symbol', y='4h RSI', color='4h RSI', 
+                               title=f'Symbols with RSI between {rsi_range[0]} and {rsi_range[1]}',
+                               color_continuous_scale='Viridis')
+        fig_range.update_traces(marker=dict(size=10))
+        fig_range.update_layout(
+            xaxis_tickangle=-45,
+            plot_bgcolor='#1E1E1E',
+            paper_bgcolor='#1E1E1E',
+            font_color='white'
+        )
+        st.plotly_chart(fig_range, use_container_width=True)
+        
+        st.dataframe(df_in_range[['Symbol', '4h RSI']].style
+                     .format({'4h RSI': '{:.2f}'})
+                     .background_gradient(cmap='viridis', subset=['4h RSI']))
     else:
-        st.warning("CSV file not found. Please ensure the data collection process is running.")
+        st.info("No symbols found in the selected RSI range.")
+
+    # Detailed view of selected symbols
+    if symbols_to_show:
+        st.subheader('🔍 Detailed Symbol View')
+        df_selected = df[df['Symbol'].isin(symbols_to_show)]
+        fig_selected = px.bar(df_selected, x='Symbol', y='4h RSI', color='4h RSI',
+                              title='RSI Values for Selected Symbols',
+                              color_continuous_scale='Viridis')
+        fig_selected.add_hline(y=30, line_dash="dash", line_color="#FF4136", annotation_text="Oversold")
+        fig_selected.add_hline(y=70, line_dash="dash", line_color="#2ECC40", annotation_text="Overbought")
+        fig_selected.update_layout(
+            plot_bgcolor='#1E1E1E',
+            paper_bgcolor='#1E1E1E',
+            font_color='white'
+        )
+        st.plotly_chart(fig_selected, use_container_width=True)
+
+        st.dataframe(df_selected[['Symbol', '4h RSI']]
+                     .style.format({'4h RSI': '{:.2f}'})
+                     .background_gradient(cmap='viridis', subset=['4h RSI']))
 
 if __name__ == "__main__":
-    # Start the CSV update thread
-    threading.Thread(target=update_csv, daemon=True).start()
-    
-    # Run the Streamlit app
     display_streamlit_app()
