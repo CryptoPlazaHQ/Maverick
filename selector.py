@@ -21,7 +21,7 @@ cache = TTLCache(maxsize=1000, ttl=300)  # Cache with 5-minute TTL
 # CSV file path
 CSV_FILE_PATH = "4h_rsi.csv"
 
-# List of symbols
+# List of symbols - ADD YOUR SYMBOLS HERE
 symbols = [
     "10000LADYSUSDT.P", "10000NFTUSDT.P", "1000BONKUSDT.P", "1000BTTUSDT.P", 
     "1000FLOKIUSDT.P", "1000LUNCUSDT.P", "1000PEPEUSDT.P", "1000XECUSDT.P", 
@@ -86,7 +86,7 @@ def fetch_all_data(symbol, exchange, screener, interval):
             exchange=exchange,
             screener=screener,
             interval=interval,
-            timeout=None
+            timeout=30  # Added timeout
         )
         analysis = handler.get_analysis()
         cache[cache_key] = analysis
@@ -119,35 +119,51 @@ def update_csv():
             
             new_df = pd.DataFrame(results)
             
-            # Reorder columns to ensure '4h RSI' is in the correct position
-            columns = [col for col in new_df.columns if col != '4h RSI'] + ['4h RSI']
-            new_df = new_df[columns]
-            
-            # Append the new data to the CSV file
-            if os.path.exists(CSV_FILE_PATH):
-                new_df.to_csv(CSV_FILE_PATH, mode='a', header=False, index=False)
+            if not new_df.empty:
+                # Reorder columns to ensure '4h RSI' is in the correct position
+                columns = [col for col in new_df.columns if col != '4h RSI'] + ['4h RSI']
+                new_df = new_df[columns]
+                
+                # Append the new data to the CSV file
+                try:
+                    if os.path.exists(CSV_FILE_PATH):
+                        new_df.to_csv(CSV_FILE_PATH, mode='a', header=False, index=False)
+                    else:
+                        new_df.to_csv(CSV_FILE_PATH, index=False)
+                    
+                    logging.info(f"CSV updated at {current_datetime} with {len(results)} symbols.")
+                except Exception as e:
+                    logging.error(f"Error writing to CSV: {str(e)}")
             else:
-                new_df.to_csv(CSV_FILE_PATH, index=False)
-            
-            logging.info(f"CSV updated at {current_datetime} with {len(results)} symbols.")
+                logging.warning("No data to write to CSV.")
             
             # Sleep for 3 minutes before the next update
             time.sleep(180)
             
         except Exception as e:
-            logging.error(f"An error occurred: {str(e)}")
+            logging.error(f"An error occurred in update_csv: {str(e)}")
             time.sleep(600)  # Wait 10 minutes before retrying
 
 @st.cache_data(ttl=180)
 def load_and_process_data():
-    df = pd.read_csv(CSV_FILE_PATH)
-    df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce', utc=True)
-    df = df.dropna(subset=['Timestamp'])
-    df['4h RSI'] = pd.to_numeric(df['4h RSI'], errors='coerce')
-    return df
+    try:
+        df = pd.read_csv(CSV_FILE_PATH)
+        df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce', utc=True)
+        df = df.dropna(subset=['Timestamp'])
+        df['4h RSI'] = pd.to_numeric(df['4h RSI'], errors='coerce')
+        return df
+    except Exception as e:
+        logging.error(f"Error loading data: {str(e)}")
+        return pd.DataFrame()  # Return an empty DataFrame if there's an error
 
 def get_latest_data(df):
+    if df.empty:
+        return pd.DataFrame(), pd.NaT
+    
     latest_timestamp = df['Timestamp'].max()
+    if pd.isnull(latest_timestamp):
+        return pd.DataFrame(), pd.NaT
+    
     latest_df = df[df['Timestamp'] == latest_timestamp].copy()
     latest_df['RSI Change'] = latest_df.groupby('Symbol')['4h RSI'].transform(lambda x: x.diff())
     return latest_df, latest_timestamp
@@ -211,7 +227,11 @@ def display_streamlit_app():
             
             # Sidebar
             st.sidebar.header('Dashboard Controls')
-            st.sidebar.write(f"🕒 Last update: {latest_timestamp.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+            
+            if pd.notnull(latest_timestamp):
+                st.sidebar.write(f"🕒 Last update: {latest_timestamp.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+            else:
+                st.sidebar.write("🕒 Last update: Not available")
             
             rsi_range = st.sidebar.slider('Range', 0, 100, (30, 70))
             symbols_to_show = st.sidebar.multiselect('Select Symbols', options=latest_df['Symbol'].unique(), default=[])
