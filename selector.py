@@ -124,7 +124,7 @@ def display_streamlit_app():
     </style>
     """, unsafe_allow_html=True)
 
-    st.title('📊 Crypto RSI Analysis')
+    st.title('📊 Crypto Selector')
 
     if st.button('Refresh Data'):
         st.experimental_rerun()
