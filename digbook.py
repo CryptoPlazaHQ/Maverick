@@ -131,7 +131,7 @@ def main():
         st.header("Chapter 2: Grid Bot Optimization")
         st.write("Optimize grid settings based on volatility and price structure.")
         
-        symbol = st.text_input("Enter symbol (e.g., CKBUSDT):", value="CKBUSDT")
+        symbol = st.text_input("Enter symbol (e.g., CKBUSDT.P):", value="CKBUSDT.P")
         position_type = st.selectbox("Select position type", ["LONG", "SHORT"])
         
         if symbol:
@@ -192,7 +192,7 @@ def main():
                 num_red_lines = len([line for line in fig.data if line.name.endswith('(Short)')])
                 
                 ratio = num_green_lines / num_red_lines if num_red_lines > 0 else float('inf')
-                ratio_label = "Favorable" if ratio > 1 else "Not Favorable"
+                ratio_label = "Favorable" if ratio > 0.99 else "Not Favorable"
                 
                 st.metric("Number of Green Lines", num_green_lines)
                 st.metric("Number of Red Lines", num_red_lines)
