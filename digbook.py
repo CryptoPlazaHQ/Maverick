@@ -59,16 +59,16 @@ def calculate_pivot_points(high, low, close):
         'r3': r3, 's3': s3
     }
 
-def optimize_grid_settings(current_price, atr, position_type):
+def optimize_grid_settings(current_price, atr, position_type, support, resistance):
     grid_size = atr * 0.5
     num_grids = 10
     
     if position_type == "LONG":
-        entry_point = current_price - (num_grids / 2 * grid_size)
-        exit_point = current_price + (num_grids / 2 * grid_size)
+        entry_point = max(current_price - (num_grids / 2 * grid_size), support)
+        exit_point = min(current_price + (num_grids / 2 * grid_size), resistance)
     else:
-        entry_point = current_price + (num_grids / 2 * grid_size)
-        exit_point = current_price - (num_grids / 2 * grid_size)
+        entry_point = min(current_price + (num_grids / 2 * grid_size), resistance)
+        exit_point = max(current_price - (num_grids / 2 * grid_size), support)
     
     stop_loss = entry_point * 0.95 if position_type == "LONG" else entry_point * 1.05
     take_profit = exit_point
@@ -87,52 +87,29 @@ def calculate_grid_profit(suggested_grid_size, current_price):
 
 # Main Streamlit App Logic
 def main():
+    st.set_page_config(layout="wide")
     st.title('Digital Book for Grid Bot Optimization')
 
     # Sidebar navigation
-    page = st.sidebar.selectbox("Chapters", ["Introduction", "Pivot Points", "Grid Optimization", "Profit Projections", "Strategy Card"])
+    page = st.sidebar.selectbox("Chapters", ["Introduction", "Grid Optimization", "Profit Projections", "Strategy Card"])
 
     # Introduction Page
     if page == "Introduction":
         st.header("Welcome to the Digital Book on Grid Bot Strategies")
-        st.write("In this interactive digital book, you’ll learn how to optimize your grid bot strategy using mathematical and statistical principles.")
+        st.write("In this interactive digital book, you'll learn how to optimize your grid bot strategy using mathematical and statistical principles.")
         st.write("Navigate through the chapters to explore concepts like Pivot Points, Grid Bot Optimization, Risk Management, and Profit Projections.")
     
-    # Chapter 1: Pivot Points
-    elif page == "Pivot Points":
-        st.header("Chapter 1: Pivot Points")
-        st.write("Pivot Points are critical in identifying potential support and resistance levels for grid bot trading.")
-        
-        symbol = st.text_input("Enter symbol (e.g., CKBUSDT.P):", value="CKBUSDT.P")
-        if symbol:
-            analysis = fetch_data(symbol, "BYBIT", "crypto", Interval.INTERVAL_1_DAY)
-            if analysis:
-                high = analysis.indicators['high']
-                low = analysis.indicators['low']
-                close = analysis.indicators['close']
-                
-                pivots = calculate_pivot_points(high, low, close)
-                st.write(f"Pivot: {pivots['pivot']:.4f}")
-                st.write(f"Resistance 1 (R1): {pivots['r1']:.4f}")
-                st.write(f"Support 1 (S1): {pivots['s1']:.4f}")
-                st.write(f"Resistance 2 (R2): {pivots['r2']:.4f}")
-                st.write(f"Support 2 (S2): {pivots['s2']:.4f}")
-                
-                # Visualize Pivot Points
-                fig = go.Figure()
-                fig.add_trace(go.Scatter(x=[0, 1], y=[pivots['pivot'], pivots['pivot']], mode='lines', name='Pivot'))
-                fig.add_trace(go.Scatter(x=[0, 1], y=[pivots['r1'], pivots['r1']], mode='lines', name='R1'))
-                fig.add_trace(go.Scatter(x=[0, 1], y=[pivots['s1'], pivots['s1']], mode='lines', name='S1'))
-                fig.update_layout(title="Pivot Points", xaxis_title="Time", yaxis_title="Price")
-                st.plotly_chart(fig)
-
-    # Chapter 2: Grid Optimization
+    # Grid Optimization Page (Merged Pivot Points and Grid Optimization)
     elif page == "Grid Optimization":
-        st.header("Chapter 2: Grid Bot Optimization")
-        st.write("Optimize grid settings based on volatility and price structure.")
+        st.header("Grid Optimization")
+        st.write("Optimize grid settings based on volatility, price structure, and pivot points.")
         
-        symbol = st.text_input("Enter symbol (e.g., CKBUSDT.P):", value="CKBUSDT.P")
-        position_type = st.selectbox("Select position type", ["LONG", "SHORT"])
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            symbol = st.text_input("Enter symbol (e.g., CKBUSDT):", value="CKBUSDT")
+        with col2:
+            position_type = st.selectbox("Select position type", ["LONG", "SHORT"])
         
         if symbol:
             analysis = fetch_data(symbol, "BYBIT", "crypto", Interval.INTERVAL_1_DAY)
@@ -147,67 +124,106 @@ def main():
                     })
                 })
 
-                # Get pivot points for the plot
+                # Calculate pivot points
                 pivots = calculate_pivot_points(analysis.indicators['high'], analysis.indicators['low'], analysis.indicators['close'])
-                r1 = pivots['r1']
-                s1 = pivots['s1']
+                
+                # Display pivot points
+                st.subheader("Pivot Points")
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Pivot", f"{pivots['pivot']:.4f}")
+                    st.metric("Support 1 (S1)", f"{pivots['s1']:.4f}")
+                    st.metric("Support 2 (S2)", f"{pivots['s2']:.4f}")
+                with col2:
+                    st.metric("Resistance 1 (R1)", f"{pivots['r1']:.4f}")
+                    st.metric("Resistance 2 (R2)", f"{pivots['r2']:.4f}")
+                with col3:
+                    st.metric("Support 3 (S3)", f"{pivots['s3']:.4f}")
+                    st.metric("Resistance 3 (R3)", f"{pivots['r3']:.4f}")
                 
                 # Calculate GRID Profit
                 grid_size = atr * 0.5
                 grid_profit = calculate_grid_profit(grid_size, current_price)
                 
-                st.write(f"Current Price: {current_price:.4f}")
-                st.write(f"Weighted ATR: {atr:.4f}")
-                st.metric("GRID Profit (%)", f"{grid_profit:.2f}%")
+                st.subheader("Market Data")
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Current Price", f"{current_price:.4f}")
+                with col2:
+                    st.metric("Weighted ATR", f"{atr:.4f}")
+                with col3:
+                    st.metric("GRID Profit (%)", f"{grid_profit:.2f}%")
                 
                 # Optimize grid settings
-                best_settings = optimize_grid_settings(current_price, atr, position_type)
-                st.write(f"Optimal Entry Point: {best_settings['entry_point']:.4f}")
-                st.write(f"Optimal Exit Point: {best_settings['exit_point']:.4f}")
+                support = pivots['s1'] if position_type == "LONG" else pivots['s2']
+                resistance = pivots['r1'] if position_type == "LONG" else pivots['r2']
+                best_settings = optimize_grid_settings(current_price, atr, position_type, support, resistance)
+                
+                st.subheader("Optimized Grid Settings")
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Optimal Entry Point", f"{best_settings['entry_point']:.4f}")
+                    st.metric("Stop Loss", f"{best_settings['stop_loss']:.4f}")
+                with col2:
+                    st.metric("Optimal Exit Point", f"{best_settings['exit_point']:.4f}")
+                    st.metric("Take Profit", f"{best_settings['take_profit']:.4f}")
+                with col3:
+                    st.metric("Grid Size", f"{best_settings['grid_size']:.4f}")
+                    st.metric("Number of Grids", best_settings['num_grids'])
                 
                 # Plot grid optimization
                 fig = go.Figure()
                 fig.add_trace(go.Scatter(x=[0], y=[current_price], mode='markers', marker=dict(color='blue', size=10), name='Current Price'))
 
+                # Add pivot lines
+                for level, name in [(pivots['pivot'], 'Pivot'), (pivots['s1'], 'S1'), (pivots['r1'], 'R1'), 
+                                    (pivots['s2'], 'S2'), (pivots['r2'], 'R2'), (pivots['s3'], 'S3'), (pivots['r3'], 'R3')]:
+                    fig.add_trace(go.Scatter(x=[-1, 1], y=[level, level], mode='lines', line=dict(color='gray', dash='dash'), name=name))
+
                 if position_type == "LONG":
                     for i in range(best_settings['num_grids']):
-                        level = current_price + (i - best_settings['num_grids'] / 2) * best_settings['grid_size']
-                        if level > current_price:
-                            fig.add_trace(go.Scatter(x=[0], y=[level], mode='lines', line=dict(color='green'), name=f'Grid Level {i+1} (Long)'))
-                        else:
-                            fig.add_trace(go.Scatter(x=[0], y=[level], mode='lines', line=dict(color='red'), name=f'Grid Level {i+1} (Short)'))
+                        level = best_settings['entry_point'] + i * best_settings['grid_size']
+                        if level <= best_settings['exit_point']:
+                            color = 'green' if level > current_price else 'red'
+                            fig.add_trace(go.Scatter(x=[-0.5, 0.5], y=[level, level], mode='lines', line=dict(color=color), name=f'Grid Level {i+1}'))
                 else:
                     for i in range(best_settings['num_grids']):
-                        level = current_price - (i - best_settings['num_grids'] / 2) * best_settings['grid_size']
-                        if level > current_price:
-                            fig.add_trace(go.Scatter(x=[0], y=[level], mode='lines', line=dict(color='red'), name=f'Grid Level {i+1} (Short)'))
-                        else:
-                            fig.add_trace(go.Scatter(x=[0], y=[level], mode='lines', line=dict(color='green'), name=f'Grid Level {i+1} (Long)'))
+                        level = best_settings['entry_point'] - i * best_settings['grid_size']
+                        if level >= best_settings['exit_point']:
+                            color = 'red' if level > current_price else 'green'
+                            fig.add_trace(go.Scatter(x=[-0.5, 0.5], y=[level, level], mode='lines', line=dict(color=color), name=f'Grid Level {i+1}'))
 
-                fig.update_layout(title="Grid Optimization", xaxis_title="Time", yaxis_title="Price")
-                st.plotly_chart(fig)
+                fig.update_layout(title="Grid Optimization", xaxis_title="", yaxis_title="Price", showlegend=False)
+                st.plotly_chart(fig, use_container_width=True)
                 
-                 # Calculate grid metrics
-                num_green_lines = len([line for line in fig.data if line.name.endswith('(Long)')])
-                num_red_lines = len([line for line in fig.data if line.name.endswith('(Short)')])
+                # Calculate grid metrics
+                num_green_lines = len([line for line in fig.data if line.line.color == 'green'])
+                num_red_lines = len([line for line in fig.data if line.line.color == 'red'])
                 
                 ratio = num_green_lines / num_red_lines if num_red_lines > 0 else float('inf')
-                ratio_label = "Favorable" if ratio > 0.99 else "Not Favorable"
+                ratio_label = "Favorable" if ratio > 1 else "Not Favorable"
                 
-                st.metric("Number of Green Lines", num_green_lines)
-                st.metric("Number of Red Lines", num_red_lines)
-                st.metric("Green to Red Line Ratio", f"{ratio:.2f}")
-                st.write(f"Ratio is: {ratio_label}")
+                st.subheader("Grid Metrics")
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("Number of Green Lines", num_green_lines)
+                with col2:
+                    st.metric("Number of Red Lines", num_red_lines)
+                with col3:
+                    st.metric("Green to Red Line Ratio", f"{ratio:.2f}")
+                st.info(f"Current grid setup is: {ratio_label}")
 
     # Chapter 3: Profit Projections
     elif page == "Profit Projections":
-        st.header("Chapter 3: Profit Projections")
+        st.header("Profit Projections")
         st.write("Project potential profits based on your grid bot settings.")
+        st.info("This section is under development. Check back soon for updates!")
 
     # Chapter 4: Strategy Card
     elif page == "Strategy Card":
-        st.header("Chapter 4: Strategy Card")
+        st.header("Strategy Card")
         st.write("Summarize your settings and download a personalized strategy card.")
+        st.info("This section is under development. Check back soon for updates!")
 
 if __name__ == "__main__":
     main()
