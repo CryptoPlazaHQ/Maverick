@@ -220,9 +220,9 @@ def grid_optimization_page():
             """)
 
 def main():
-    st.set_page_config(page_title="Advanced Futures Grid Bot Strategy", layout="wide")
+    st.set_page_config(page_title="Maverick Book", layout="wide")
     
-    st.title("Advanced Futures Grid Bot Strategy")
+    st.title("Maverick Book")
     
     # Sidebar navigation
     page = st.sidebar.selectbox("Chapters", ["Introduction", "Grid Optimization", "Profit Projections", "Strategy Card"])
@@ -230,7 +230,7 @@ def main():
     if page == "Grid Optimization":
         grid_optimization_page()
     elif page == "Introduction":
-        st.header("Welcome to the Advanced Futures Grid Bot Strategy")
+        st.header("Welcome to Maverick Book")
         st.write("This interactive tool helps you optimize your grid bot strategy using market data, pivot points, and support/resistance levels.")
         st.write("Navigate to the Grid Optimization page to analyze a specific symbol and get recommendations.")
     elif page == "Profit Projections":
