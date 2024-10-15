@@ -199,7 +199,7 @@ def main():
                 st.session_state.trading_data['recommendation'] = recommendation
                 st.session_state.checklist['Discord Alert and Pair Selection'] = True
                 st.session_state.step += 1
-                st.experimental_rerun()
+                st.rerun()
 
         elif st.session_state.step == 1:
             st.header("2. 4H Chart Analysis")
@@ -216,7 +216,7 @@ def main():
                 st.session_state.checklist['4H Chart Analysis'] = st.checkbox("4H Analysis Complete", st.session_state.checklist['4H Chart Analysis'])
                 if st.session_state.checklist['4H Chart Analysis'] and st.button("Continue to 30M Analysis"):
                     st.session_state.step += 1
-                    st.experimental_rerun()
+                    st.rerun()
 
         elif st.session_state.step == 2:
             st.header("3. 30M Chart Analysis")
