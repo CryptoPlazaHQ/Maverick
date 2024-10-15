@@ -360,7 +360,7 @@ def main():
             st.session_state.checklist[key] = False
         st.session_state.step = 0
         st.session_state.trading_data = {}
-        st.experimental_rerun()
+        st.rerun()
 
     # Display completion message and summary
     if all(st.session_state.checklist.values()):
