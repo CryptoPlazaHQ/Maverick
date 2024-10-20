@@ -123,9 +123,9 @@ def get_recommendation(current_price, r1, s1):
     distance_to_r1 = (r1 - current_price) / current_price * Decimal('100')
     distance_to_s1 = (current_price - s1) / current_price * Decimal('100')
     
-    if distance_to_r1 > Decimal('4.5') and distance_to_s1 < Decimal('3.0'):
+    if distance_to_r1 > Decimal('2.5') and distance_to_s1 < Decimal('2.0'):
         return "LONG"
-    elif distance_to_s1 > Decimal('4.5') and distance_to_r1 < Decimal('3.0'):
+    elif distance_to_s1 > Decimal('2.5') and distance_to_r1 < Decimal('2.0'):
         return "SHORT"
     return "NEUTRAL"
 
