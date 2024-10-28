@@ -57,7 +57,7 @@ symbols = [
 # Configuration
 exchange = "BYBIT"
 screener = "crypto"
-interval = Interval.INTERVAL_1_DAY
+interval = Interval.INTERVAL_4_HOURS
 
 @st.cache_data(ttl=180)
 def fetch_all_data():
