@@ -24,7 +24,6 @@ yfinance
 PyNaCl
 anthropic
 aiofiles
-cchardet
 langchain
 pinecone-client
 Pillow
