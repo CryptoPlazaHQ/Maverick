@@ -1,0 +1,43 @@
+{
+  "maverick_strategy": {
+    "timeframes": {
+      "4H": "Primary trend and setup identification",
+      "1H": "Confirmation and entry timing",
+      "15M": "Execution and precision entry"
+    },
+    "setups": {
+      "bounce_back": {
+        "requirements": [
+          "RSI 4H crosses above 30",
+          "Double bottom in 15m",
+          "Volume above average",
+          "Reversal candle in 1H"
+        ],
+        "risk_parameters": {
+          "min_rr": 1.5,
+          "stop_loss": "2-4%",
+          "targets": [
+            "4%",
+            "6%"
+          ]
+        }
+      },
+      "pullback": {
+        "requirements": [
+          "RSI 4H above 35",
+          "EMA 50 15m as support",
+          "Decreasing volume on retrace",
+          "Minimum 2 bullish candles in 1H"
+        ],
+        "risk_parameters": {
+          "min_rr": 1.8,
+          "stop_loss": "3-5%",
+          "targets": [
+            "5%",
+            "8%"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -16,3 +16,16 @@ discord.py
 kaleido
 python-dotenv==1.0.0
 seaborn
+python-dotenv
+web3
+tabulate
+aiohttp
+yfinance
+PyNaCl
+anthropic
+aiofiles
+cchardet
+langchain
+pinecone-client
+Pillow
+psutil
