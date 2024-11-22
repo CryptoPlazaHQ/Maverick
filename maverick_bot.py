@@ -398,13 +398,29 @@ class MaverickBot:
                 }]
             }]
             
-            # Get Claude's analysis
-            response = await self.anthropic.messages.create(
-                model="claude-3-5-sonnet-20241022",
-                max_tokens=1024,
-                messages=messages
-            )
+            # Get Claude's analysis with retry logic
+            max_retries = 3
+            retry_delay = 1
+            response = None
             
+            for attempt in range(max_retries):
+                try:
+                    response = await self.anthropic.messages.create(
+                        model="claude-3-5-sonnet-20241022",
+                        max_tokens=1024,
+                        messages=messages
+                    )
+                    break
+                except Exception as e:
+                    logger.warning(f"API call attempt {attempt + 1} failed: {str(e)}")
+                    if attempt == max_retries - 1:
+                        raise AnalysisError(f"Failed to get analysis after {max_retries} attempts: {str(e)}")
+                    await asyncio.sleep(retry_delay * (attempt + 1))
+                    continue
+            
+            if not response:
+                raise AnalysisError("No response received from API")
+                
             # Parse and enhance analysis
             analysis = self._parse_analysis(response.content[0].text)
             
@@ -415,8 +431,8 @@ class MaverickBot:
             
             # Extract and store levels
             levels = analysis.get('levels', {})
-            state.supports = [Decimal(str(p)) for p in levels.get('support', [])]
-            state.resistances = [Decimal(str(p)) for p in levels.get('resistance', [])]
+            state.supports = [Decimal(str(p)) for p in levels.get('support', []) if p is not None]
+            state.resistances = [Decimal(str(p)) for p in levels.get('resistance', []) if p is not None]
             
             return analysis
             
@@ -513,26 +529,43 @@ Prioritize high-probability setups that align with the current market phase."""
             'resistance': []
         }
         
-        # Look for price levels in the text
-        price_pattern = r'(\d+\.?\d*)'
-        
-        # Extract support levels
-        support_matches = re.finditer(
-            rf'support.*?{price_pattern}|{price_pattern}.*?support',
-            text.lower()
-        )
-        levels['support'] = [
-            float(match.group(1)) for match in support_matches
-        ]
-        
-        # Extract resistance levels
-        resistance_matches = re.finditer(
-            rf'resistance.*?{price_pattern}|{price_pattern}.*?resistance',
-            text.lower()
-        )
-        levels['resistance'] = [
-            float(match.group(1)) for match in resistance_matches
-        ]
+        try:
+            # Enhanced price pattern that looks for numbers near support/resistance keywords
+            # This pattern ensures we only match numbers that are actually price levels
+            support_pattern = r'support.*?(\d+\.?\d*)|\$?(\d+\.?\d*).*?support'
+            resistance_pattern = r'resistance.*?(\d+\.?\d*)|\$?(\d+\.?\d*).*?resistance'
+            
+            # Extract support levels
+            support_matches = re.finditer(support_pattern, text.lower())
+            for match in support_matches:
+                # Check both capture groups
+                price_str = match.group(1) if match.group(1) else match.group(2)
+                if price_str:
+                    try:
+                        price = float(price_str)
+                        if price > 0:  # Validate price is positive
+                            levels['support'].append(price)
+                    except ValueError:
+                        continue
+            
+            # Extract resistance levels
+            resistance_matches = re.finditer(resistance_pattern, text.lower())
+            for match in resistance_matches:
+                # Check both capture groups
+                price_str = match.group(1) if match.group(1) else match.group(2)
+                if price_str:
+                    try:
+                        price = float(price_str)
+                        if price > 0:  # Validate price is positive
+                            levels['resistance'].append(price)
+                    except ValueError:
+                        continue
+            
+            # Log extracted levels for debugging
+            logger.debug(f"Extracted levels: {levels}")
+            
+        except Exception as e:
+            logger.error(f"Level extraction error: {str(e)}")
         
         return levels
 
