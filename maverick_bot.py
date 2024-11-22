@@ -407,7 +407,7 @@ class MaverickBot:
                 try:
                     response = await self.anthropic.messages.create(
                         model="claude-3-5-sonnet-20241022",
-                        max_tokens=1024,
+                        max_tokens=4000,
                         messages=messages
                     )
                     break
@@ -1091,7 +1091,7 @@ Please provide a clear, educational response focusing on practical application."
         # Get response from Claude
         response = await maverick_bot.anthropic.messages.create(
             model="claude-3-5-sonnet-20241022",
-            max_tokens=1024,
+            max_tokens=2500,
             messages=[{
                 "role": "user",
                 "content": prompt
