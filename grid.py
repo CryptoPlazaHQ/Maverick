@@ -54,7 +54,7 @@ def calculate_grid_levels(entry_price, box_high, box_low, leverage=5, direction=
         take_profit = take_profit_levels[0.236]
         
         # Stop Loss: Proyección hacia abajo desde box_low
-        stop_loss = box_low - (box_range * 0.786)
+        stop_loss = box_low - (box_range * 0.236)
         
     else:  # SHORT
         # Take Profit: Calcular desde entry hasta extensión inferior
@@ -63,7 +63,7 @@ def calculate_grid_levels(entry_price, box_high, box_low, leverage=5, direction=
         take_profit = take_profit_levels[0.236]
         
         # Stop Loss: Proyección hacia arriba desde box_high
-        stop_loss = box_high + (box_range * 0.786)
+        stop_loss = box_high + (box_range * 0.236)
     
     # Calcular número de grids y profit
     n_grids = 21  # Fijo según el ejemplo de Bybit
