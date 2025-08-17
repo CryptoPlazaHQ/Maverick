@@ -43,123 +43,232 @@ flowchart TD
     class H active
 ```
 
-### Enhanced Price Action Flow
+# 📈 MAVERICK UBCT State Progression & Price Action Flow
 
+> **Advanced Pattern Recognition Algorithm** - Real-time market analysis with dynamic invalidation protection
+
+---
+
+## 🔄 State Machine Overview
+
+```mermaid
+graph TD
+    A[🏁 STANDBY<br/>Waiting for Pivot] --> B[🌱 SEED_P1<br/>P1 Fixed]
+    B --> C[⏳ PROVISIONAL_P0<br/>🔴 HIGH RISK]
+    C --> D[✅ VALIDATE_P0<br/>🔴 HIGH RISK]
+    D --> E[🚀 BREAKOUT_1<br/>🔴 HIGH RISK]
+    E --> F[📉 PULLBACK_2<br/>🔴 CRITICAL]
+    F --> G[🔒 BREAKOUT_2<br/>Pattern Lock]
+    G --> H[🎯 UBCT_CYCLING<br/>🛡️ IMMUNE]
+    
+    C -->|0.786 Breach| A
+    D -->|Invalidation| A
+    E -->|Invalidation| A
+    F -->|Invalidation| A
 ```
-📊 MAVERICK UBCT STATE PROGRESSION & PRICE ACTION
 
-┌─ State 1: STANDBY ────────────────────────────────────────┐
-│ 🏁 Waiting for initial swing pivot                        │
-│                                                            │
-│ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Price Line            │
-│                          ▲ P1 (High) or ▼ P1 (Low)       │
-│                          █ PIVOT DETECTED                 │
-└────────────────────────────────────────────────────────────┘
-                          │
-                          ▼ Transition
-┌─ State 2: SEED_P1 ─────────────────────────────────────────┐
-│ 🌱 P1 Fixed - Scanning for P0 candidate                   │
-│                                                            │
-│ P1 ████████████████████ (LOCKED HIGH/LOW)                 │
-│    ▼                                                       │
-│    ├─ Looking for opposite pivot                          │
-│    └─ P0 candidate: ◆ (opposite direction)                │
-└────────────────────────────────────────────────────────────┘
-                          │
-                          ▼ P0 Found
-┌─ State 3: PROVISIONAL_P0 ──────────────────────────────────┐
-│ ⏳ 🔴 HIGH RISK - Invalidation Active (0.786 breach)       │
-│                                                            │
-│ P1 ████ (Fixed)              P0 ◆◆◆◆ (Candidate)          │
-│     ▲                           ▼                          │
-│     │ ╔══════════════════════════╗                        │
-│     └─║ 0.382 ~~~~~~~~~~~~~~~~~ ║─ Validation Band        │
-│       ║ 0.618 ~~~~~~~~~~~~~~~~~ ║                        │
-│       ╚══════════════════════════╝                        │
-│              ⚠️ Waiting for pullback into band            │
-└────────────────────────────────────────────────────────────┘
-                          │
-                          ▼ Pullback Validated
-┌─ State 4: VALIDATE_P0 ──────────────────────────────────────┐
-│ ✅ 🔴 HIGH RISK - P0 Confirmed, awaiting breakout          │
-│                                                            │
-│ P1 ████                    P0 ◆◆◆◆ (Confirmed)            │
-│     ▲                        │                             │
-│     │    ╔═══════════════════╬═══════╗                    │
-│     └────║ ~~~~/‾‾‾‾‾‾‾‾‾‾‾‾‾│‾‾‾‾‾‾ ║ ← Validated Band    │
-│          ║ ~~~~\______________|______ ║                    │
-│          ╚═══════════════════╬═══════╝                    │
-│                              ▼                             │
-│                        💥 First Breakout                  │
-└────────────────────────────────────────────────────────────┘
-                          │
-                          ▼ First Breakout
-┌─ State 5: BREAKOUT_1 ───────────────────────────────────────┐
-│ 🚀 🔴 HIGH RISK - P0_dynamic Updates                       │
-│                                                            │
-│ P1 ████                P0_dynamic ♦♦♦♦ (Updated)           │
-│     ▲                      ▲                               │
-│     │   ╔══════════════════╬══════════════╗                │
-│     └───║ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄│▄▄▄▄▄▄▄▄▄▄▄▄ ║ ← Breakout     │
-│         ║                  │              ║                │
-│         ║ ~~~~~~~~~~~~~~~~▲│~~~~~~~~~~~~~~ ║ ← Next Band    │
-│         ╚══════════════════╬══════════════╝                │
-│                            ▼                               │
-│                    ⏳ Awaiting 2nd pullback               │
-└────────────────────────────────────────────────────────────┘
-                          │
-                          ▼ Second Pullback
-┌─ State 6: PULLBACK_2 ───────────────────────────────────────┐
-│ 📉 🔴 CRITICAL - LAST INVALIDATION CHECK                   │
-│                                                            │
-│ P1 ████            P0_dynamic ♦♦♦♦                         │
-│     ▲                  │                                   │
-│     │   ╔══════════════╬══════════════╗                    │
-│     └───║ ▄▄▄▄▄▄▄▄▄▄▄▄▄│▄▄▄▄▄▄▄▄▄▄▄▄ ║                    │
-│         ║       \/‾‾‾‾‾│‾‾‾‾‾\        ║ ← 2nd Pullback     │
-│         ║ ~~~~~~~~~~~~~│~~~~~~~~~~~~~ ║                    │
-│         ╚══════════════╬══════════════╝                    │
-│                        ▼                                   │
-│               🔥 FINAL BREAKOUT IMMINENT                   │
-└────────────────────────────────────────────────────────────┘
-                          │
-                          ▼ Second Breakout + Lock
-┌─ State 7: BREAKOUT_2 ───────────────────────────────────────┐
-│ 🔓➡️🔒 PATTERN LOCKING ACTIVATED                           │
-│                                                            │
-│ P1 ████          P0_dynamic ♦♦♦♦ (FINAL UPDATE)            │
-│     ▲                ▲                                     │
-│     │   ╔════════════╬══════════════════╗                  │
-│     └───║ ▄▄▄▄▄▄▄▄▄▄▄│▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄ ║                  │
-│         ║            │                 ║                  │
-│         ║ ~~~~~~~~~~~│~~~~~~~~~~~~~~~~ ║                  │
-│         ╚════════════╬══════════════════╝                  │
-│                      ▼                                     │
-│              🔒 patternLocked = TRUE                       │
-└────────────────────────────────────────────────────────────┘
-                          │
-                          ▼ Cycling Activated
-┌─ State 8: UBCT_CYCLING ─────────────────────────────────────┐
-│ 🎯 🛡️ TRADING ZONES ACTIVE - INVALIDATION IMMUNE          │
-│                                                            │
-│ P1 ████████████████  P0_dynamic ♦♦♦♦♦♦♦♦ (LOCKED)          │
-│ ╔══════════════════════════════════════════════════════╗   │
-│ ║ 🟦 OPERATIVE ZONE  ████████████████████████████████  ║   │
-│ ║ 🟨 ENTRY ZONE      ████████████████████████████████  ║   │
-│ ╚══════════════════════════════════════════════════════╝   │
-│                                                            │
-│ Exit Conditions:                                           │
-│ • 0.236 Fibonacci Level Touch                              │
-│ • No Pivot Bars Timeout                                   │
-└────────────────────────────────────────────────────────────┘
+---
 
-════════════════════════════════════════════════════════════
-🔍 LEGEND:
-████ P1_fixed (Anchor Point)    ♦♦♦♦ P0_dynamic (Updates)
-◆◆◆◆ P0 Candidate              ╔════╗ Fibonacci Bands  
-🔴 Invalidation Risk Active     🔒 Pattern Locked
-🛡️ Invalidation Immune          ⚠️ Critical State
-════════════════════════════════════════════════════════════
+## 📊 Detailed State Breakdown
+
+### **State 1** | 🏁 STANDBY
+```
+Status: ⚪ Waiting
+Risk:   🟢 None
+```
+- **Objective:** Detect initial swing pivot
+- **Trigger:** First significant high/low formation
+- **Output:** P1 coordinate establishment
+
+---
+
+### **State 2** | 🌱 SEED_P1
+```
+Status: 🔍 Scanning
+Risk:   🟡 Low
+```
+- **Fixed:** `P1` anchor point locked
+- **Scanning:** Opposite direction pivot (P0 candidate)
+- **Logic:** Fibonacci-based validation zones active
+
+---
+
+### **State 3** | ⏳ PROVISIONAL_P0
+```
+Status: 🔴 HIGH RISK - Invalidation Active
+Risk:   🔴 Critical (0.786 breach = reset)
+```
+
+#### Risk Management
+| **Invalidation Level** | **Action** |
+|------------------------|------------|
+| 0.786 Fibonacci | → Return to STANDBY |
+| Above P1 (if P0 is low) | → Pattern Reset |
+| Below P1 (if P0 is high) | → Pattern Reset |
+
+#### Fibonacci Validation Bands
+```
+P1 ████████████████████████████
+    │
+    ├─ 0.236 ████████████████████
+    ├─ 0.382 ████████████████████ ← Entry consideration
+    ├─ 0.618 ████████████████████ ← Primary validation
+    └─ 0.786 ████████████████████ ← Invalidation level
+                                │
+                               P0 ♦♦♦♦♦
+```
+
+---
+
+### **State 4** | ✅ VALIDATE_P0
+```
+Status: 🔴 HIGH RISK - Awaiting Breakout
+Risk:   🔴 Critical
+```
+
+#### Confirmation Criteria
+- [x] Pullback into 0.382-0.618 band completed
+- [x] P0 candidate validated
+- [ ] **Waiting:** First breakout beyond validation zone
+
+#### Price Action Visualization
+```
+        P1 ████
+           │ ╭─────────────────────╮
+           ├─╢ ≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈≈ ╟─ Validation Band
+           │ ╰─────────┬───────────╯
+           │           │
+           │           ▼ 💥 BREAKOUT TARGET
+           │          P0 ♦♦♦♦
+```
+
+---
+
+### **State 5** | 🚀 BREAKOUT_1
+```
+Status: 🔴 HIGH RISK - Dynamic Updates
+Risk:   🔴 Critical
+```
+
+#### Dynamic Behavior
+- **P0_dynamic:** Updates with each new extreme
+- **Fibonacci Bands:** Recalculate in real-time
+- **Next Target:** Second pullback validation
+
+#### Update Logic
+```python
+if new_extreme > current_P0_dynamic:
+    P0_dynamic = new_extreme
+    recalculate_fibonacci_levels()
+```
+
+---
+
+### **State 6** | 📉 PULLBACK_2
+```
+Status: 🔴 CRITICAL - Last Invalidation Check
+Risk:   ⚠️ Final validation phase
+```
+
+#### Critical Decision Point
+> This is the **final opportunity** for pattern invalidation
+
+#### Success Path
+```
+P1 ████     P0_dynamic ♦♦♦♦
+   │ ╭─────────┴──────────╮
+   ├─╢ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ ╟─ Breakout level
+   │ ╰─────────┬──────────╯
+   │           │
+   │           ▼ 🔥 FINAL BREAKOUT
+   │      ╭─────────╮
+   └──────╢ ≈≈≈≈≈≈≈ ╟─ 2nd pullback zone
+          ╰─────────╯
+```
+
+---
+
+### **State 7** | 🔒 BREAKOUT_2
+```
+Status: 🔓➡️🔒 Pattern Locking Initiated
+Risk:   🟡 Transitioning to Safe
+```
+
+#### Lock Sequence
+1. **P0_dynamic** receives final update
+2. **patternLocked** = `true`
+3. **Fibonacci levels** freeze permanently
+4. **Invalidation protection** activates
+
+---
+
+### **State 8** | 🎯 UBCT_CYCLING
+```
+Status: 🛡️ INVALIDATION IMMUNE
+Risk:   🟢 Protected Trading Zone
+```
+
+#### Trading Zones
+| **Zone** | **Purpose** | **Color Code** |
+|----------|-------------|----------------|
+| 🟦 **Operative Zone** | Primary trading area | `#2196F3` |
+| 🟨 **Entry Zone** | Optimal entry points | `#FFC107` |
+
+#### Zone Calculation
+```
+Operative Zone: P1 to 0.618 retracement of P1-P0_dynamic
+Entry Zone:     0.618 to 0.786 retracement of P1-P0_dynamic
+```
+
+#### Exit Conditions
+- **0.236 Fibonacci Touch:** Signal exhaustion
+- **No Pivot Bars Timeout:** Pattern completion
+- **Manual Override:** Risk management
+
+---
+
+## 🔧 Technical Implementation
+
+### Core Parameters
+```yaml
+invalidation_threshold: 0.786
+validation_band: [0.382, 0.618]
+entry_zone: [0.618, 0.786]
+operative_zone: [0.236, 0.618]
+pivot_detection_sensitivity: 3  # bars
+```
+
+### Risk Levels
+| Risk | States | Color | Action |
+|------|--------|-------|--------|
+| 🟢 **Safe** | STANDBY, UBCT_CYCLING | Green | Full trading |
+| 🟡 **Low** | SEED_P1, BREAKOUT_2 | Yellow | Cautious |
+| 🔴 **High** | PROVISIONAL_P0, VALIDATE_P0, BREAKOUT_1 | Red | Minimal exposure |
+| ⚠️ **Critical** | PULLBACK_2 | Orange | Emergency protocols |
+
+---
+
+## 📋 Quick Reference
+
+### State Transitions
+```
+STANDBY → SEED_P1 → PROVISIONAL_P0 → VALIDATE_P0 → BREAKOUT_1 → PULLBACK_2 → BREAKOUT_2 → UBCT_CYCLING
+    ↑         ↑            ↑              ↑            ↑            ↑
+    └─────────┴────────────┴──────────────┴────────────┴────────────┘
+                        (Invalidation paths)
+```
+
+### Legend
+- `████` **P1_fixed** - Immutable anchor point
+- `♦♦♦♦` **P0_dynamic** - Updates until lock
+- `≈≈≈≈` **Fibonacci bands** - Validation zones  
+- `▓▓▓▓` **Breakout levels** - Action triggers
+- 🔴 **Invalidation risk** - Pattern can reset
+- 🛡️ **Invalidation immune** - Protected state
+
+---
+
+*Built with precision for high-frequency pattern recognition and risk management.*
 ```
 
 ### Invalidation Risk Heatmap
