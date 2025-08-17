@@ -31,11 +31,11 @@ flowchart TD
     %% Exit conditions
     H -.->|0.236 Touch OR Timeout| A
     
-    %% Styling
-    classDef danger fill:#ff9999,stroke:#ff0000,stroke-width:2px
-    classDef safe fill:#99ff99,stroke:#00aa00,stroke-width:2px
-    classDef locked fill:#ffcc99,stroke:#ff8800,stroke-width:3px
-    classDef active fill:#99ccff,stroke:#0066cc,stroke-width:3px
+    %% Styling - High contrast colors for dark/light mode compatibility
+    classDef danger fill:#dc2626,stroke:#b91c1c,stroke-width:2px,color:#ffffff
+    classDef safe fill:#059669,stroke:#047857,stroke-width:2px,color:#ffffff
+    classDef locked fill:#d97706,stroke:#b45309,stroke-width:3px,color:#ffffff
+    classDef active fill:#2563eb,stroke:#1d4ed8,stroke-width:3px,color:#ffffff
     
     class C,D,E,F danger
     class A,B safe
@@ -97,14 +97,17 @@ UBCT_CYCLING ──────●───────────────�
 
 ```
 State Risk Level:
-🟢 STANDBY       ■■□□□ No Risk
-🟢 SEED_P1       ■■□□□ No Risk  
-🔴 PROVISIONAL_P0 ■■■■■ High Risk (0.786 breach = RESET)
-🔴 VALIDATE_P0    ■■■■■ High Risk (0.786 breach = RESET)
-🔴 BREAKOUT_1     ■■■■■ High Risk (0.786 breach = RESET)  
-🔴 PULLBACK_2     ■■■■■ High Risk (LAST chance for reset)
-🟡 BREAKOUT_2     ■□□□□ Protected (Pattern Locking)
-🟢 UBCT_CYCLING   □□□□□ Immune (Fully Protected)
+🟢 STANDBY       ████▓ No Risk (Safe Zone)
+🟢 SEED_P1       ████▓ No Risk (Safe Zone)
+🔴 PROVISIONAL_P0 █████ High Risk (0.786 breach = RESET)
+🔴 VALIDATE_P0    █████ High Risk (0.786 breach = RESET)
+🔴 BREAKOUT_1     █████ High Risk (0.786 breach = RESET)  
+🔴 PULLBACK_2     █████ High Risk (LAST chance for reset)
+🟠 BREAKOUT_2     █▓▓▓▓ Protected (Pattern Locking Active)
+🔵 UBCT_CYCLING   ▓▓▓▓▓ Immune (Fully Protected Zone)
+
+Legend: █ = Risk Level, ▓ = Protected Level
+Colors: 🔴 Red=Danger 🟠 Orange=Locking 🟢 Green=Safe 🔵 Blue=Active
 ```
 
 ### Detailed State Breakdown
