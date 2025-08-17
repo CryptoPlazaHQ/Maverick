@@ -43,29 +43,9 @@ flowchart TD
     class H active
 ```
 
-# 📈 MAVERICK UBCT State Progression & Price Action Flow
+
 
 > **Advanced Pattern Recognition Algorithm** - Real-time market analysis with dynamic invalidation protection
-
----
-
-## 🔄 State Machine Overview
-
-```mermaid
-graph TD
-    A[🏁 STANDBY<br/>Waiting for Pivot] --> B[🌱 SEED_P1<br/>P1 Fixed]
-    B --> C[⏳ PROVISIONAL_P0<br/>🔴 HIGH RISK]
-    C --> D[✅ VALIDATE_P0<br/>🔴 HIGH RISK]
-    D --> E[🚀 BREAKOUT_1<br/>🔴 HIGH RISK]
-    E --> F[📉 PULLBACK_2<br/>🔴 CRITICAL]
-    F --> G[🔒 BREAKOUT_2<br/>Pattern Lock]
-    G --> H[🎯 UBCT_CYCLING<br/>🛡️ IMMUNE]
-    
-    C -->|0.786 Breach| A
-    D -->|Invalidation| A
-    E -->|Invalidation| A
-    F -->|Invalidation| A
-```
 
 ---
 
