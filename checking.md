@@ -12,8 +12,99 @@ The ultimate version (v3.x) implements a formal state machine that ensures robus
 
 ### State Flow Diagram
 
+```mermaid
+flowchart TD
+    A[🏁 STANDBY<br/>Waiting for P1 pivot] --> B[🌱 SEED_P1<br/>P1 Fixed<br/>Looking for P0]
+    B --> C[⏳ PROVISIONAL_P0<br/>P0 candidate found<br/>⚠️ Invalidation Active]
+    C --> D[✅ VALIDATE_P0<br/>Pullback validated<br/>⚠️ Invalidation Active]
+    D --> E[🚀 BREAKOUT_1<br/>First breakout<br/>P0_dynamic updates<br/>⚠️ Invalidation Active]
+    E --> F[📉 PULLBACK_2<br/>Second pullback<br/>⚠️ LAST invalidation check]
+    F --> G[🔓 BREAKOUT_2<br/>Second breakout<br/>🔒 patternLocked = TRUE]
+    G --> H[🎯 UBCT_CYCLING<br/>✨ Trading Zones Active<br/>🛡️ Invalidation Immune]
+    
+    %% Invalidation paths (red dashed lines)
+    C -.->|0.786 Breach| A
+    D -.->|0.786 Breach| A  
+    E -.->|0.786 Breach| A
+    F -.->|0.786 Breach| A
+    
+    %% Exit conditions
+    H -.->|0.236 Touch OR Timeout| A
+    
+    %% Styling
+    classDef danger fill:#ff9999,stroke:#ff0000,stroke-width:2px
+    classDef safe fill:#99ff99,stroke:#00aa00,stroke-width:2px
+    classDef locked fill:#ffcc99,stroke:#ff8800,stroke-width:3px
+    classDef active fill:#99ccff,stroke:#0066cc,stroke-width:3px
+    
+    class C,D,E,F danger
+    class A,B safe
+    class G locked
+    class H active
 ```
-STANDBY → SEED_P1 → PROVISIONAL_P0 → VALIDATE_P0 → BREAKOUT_1 → PULLBACK_2 → BREAKOUT_2 → UBCT_CYCLING
+
+### Visual Price Action Representation
+
+```
+📈 Price Movement Through States:
+
+STANDBY ──────────────────────────────
+   │                                  
+   └─→ P1 Pivot Found ●               
+                                      
+SEED_P1 ──────────────────────────────
+   │                                  
+   └─→ Looking for P0 candidate       
+                                      
+PROVISIONAL_P0 ───────────────────────
+   │                    ●─── P0       
+   │                   ╱              
+   └─→ Wait for ──────╱ pullback      
+       0.382-0.618 validation         
+                                      
+VALIDATE_P0 ──────────────────────────
+   │     ●─────────● P0 confirmed     
+   │    ╱         ╲                   
+   └──╱            ╲                  
+      │             │                 
+   Pullback     First Breakout        
+   Validated    ──────────────→       
+                                      
+BREAKOUT_1 ───────────────────────────
+   │                  ●───────● P0_dynamic
+   │                 ╱         ╲      
+   └─→ Wait for ────╱           ╲     
+       second pullback          │     
+                               ╱      
+PULLBACK_2 ──────────────────╱───────
+   │              ●                   
+   │             ╱ │                  
+   └─→ Second ──╱  │ ⚠️ LAST          
+       pullback    │ invalidation     
+                   │ check            
+                   ▼                  
+BREAKOUT_2 ────────●──────────────────
+   │               │ 🔒 PATTERN       
+   └─→ P0_dynamic  │    LOCKED        
+       final update│                  
+                   ▼                  
+UBCT_CYCLING ──────●──────────────────
+       🎯 TRADING ZONES ACTIVE        
+       🛡️ INVALIDATION IMMUNE         
+```
+
+### Invalidation Risk Heatmap
+
+```
+State Risk Level:
+🟢 STANDBY       ■■□□□ No Risk
+🟢 SEED_P1       ■■□□□ No Risk  
+🔴 PROVISIONAL_P0 ■■■■■ High Risk (0.786 breach = RESET)
+🔴 VALIDATE_P0    ■■■■■ High Risk (0.786 breach = RESET)
+🔴 BREAKOUT_1     ■■■■■ High Risk (0.786 breach = RESET)  
+🔴 PULLBACK_2     ■■■■■ High Risk (LAST chance for reset)
+🟡 BREAKOUT_2     ■□□□□ Protected (Pattern Locking)
+🟢 UBCT_CYCLING   □□□□□ Immune (Fully Protected)
 ```
 
 ### Detailed State Breakdown
